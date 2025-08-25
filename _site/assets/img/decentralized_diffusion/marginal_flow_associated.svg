@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="a" data-name="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 640">
+  <defs>
+    <style>
+      .c {
+        fill: none;
+      }
+
+      .d {
+        font-family: STIXVariants-Regular, STIXVariants;
+      }
+
+      .d, .e, .f, .g {
+        font-size: 104px;
+      }
+
+      .h, .i, .f {
+        font-family: STIXGeneral-Italic, STIXGeneral;
+        font-style: italic;
+      }
+
+      .h, .j {
+        font-size: 73.84px;
+      }
+
+      .k {
+        font-family: HelveticaNeue-Medium, 'Helvetica Neue';
+        font-size: 61px;
+        font-weight: 500;
+      }
+
+      .e {
+        font-family: STIXSizeOneSym-Regular, STIXSizeOneSym;
+      }
+
+      .l {
+        fill: #fff;
+      }
+
+      .i, .m {
+        font-size: 52.43px;
+      }
+
+      .n {
+        clip-path: url(#b);
+      }
+
+      .j, .g, .m {
+        font-family: STIXGeneral-Regular, STIXGeneral;
+      }
+    </style>
+    <clipPath id="b">
+      <rect class="c" width="1920" height="640"/>
+    </clipPath>
+  </defs>
+  <g class="n">
+    <path class="l" d="M115.48,25.58h1689.05c33.47,0,53.55,0,66.94,5.59,19.3,7.02,34.5,22.23,41.53,41.53,5.59,13.39,5.59,33.47,5.59,66.94v360.71c0,33.47,0,53.55-5.59,66.94-7.03,19.3-22.23,34.5-41.53,41.53-13.39,5.59-33.47,5.59-66.94,5.59H115.48c-33.47,0-53.55,0-66.94-5.59-19.3-7.02-34.5-22.23-41.53-41.53-5.59-13.39-5.59-33.47-5.59-66.94V139.64c0-33.47,0-53.55,5.59-66.94,7.02-19.3,22.23-34.5,41.53-41.53,13.39-5.59,33.47-5.59,66.94-5.59Z"/>
+    <text class="f" transform="translate(18.24 345.67)"><tspan x="0" y="0">u</tspan></text>
+    <text class="h" transform="translate(66.58 371.67)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(87.11 345.67)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(121.74 345.67)"><tspan x="0" y="0">x</tspan></text>
+    <text class="h" transform="translate(164.26 371.67)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(184.79 345.67)"><tspan x="0" y="0">)</tspan></text>
+    <text class="g" transform="translate(248.31 345.67)"><tspan x="0" y="0">=</tspan></text>
+    <text class="h" transform="translate(391 227.16)"><tspan x="0" y="0">K</tspan></text>
+    <text class="e" transform="translate(348.44 399.85)"><tspan x="0" y="0">∑</tspan></text>
+    <text class="h" transform="translate(355.48 472.75)"><tspan x="0" y="0">k</tspan></text>
+    <text class="j" transform="translate(388.27 472.75)"><tspan x="0" y="0">=</tspan></text>
+    <text class="j" transform="translate(438.85 472.75)"><tspan x="0" y="0">1</tspan></text>
+    <text class="f" transform="translate(510.54 252.51)"><tspan x="0" y="0">p</tspan></text>
+    <text class="h" transform="translate(559.3 278.51)"><tspan x="0" y="0">t</tspan></text>
+    <text class="j" transform="translate(579.83 278.51)"><tspan x="0" y="0">,</tspan></text>
+    <text class="h" transform="translate(598.29 278.51)"><tspan x="0" y="0">S</tspan></text>
+    <text class="i" transform="translate(632.93 294.75)"><tspan x="0" y="0">k</tspan></text>
+    <text class="g" transform="translate(656.21 252.51)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(690.84 252.51)"><tspan x="0" y="0">x</tspan></text>
+    <text class="h" transform="translate(733.36 278.51)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(753.89 252.51)"><tspan x="0" y="0">)</tspan></text>
+    <rect x="500.14" y="315.92" width="298.78" height="6.86"/>
+    <text class="f" transform="translate(548.29 423.67)"><tspan x="0" y="0">p</tspan></text>
+    <text class="h" transform="translate(597.49 446.55)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(618.02 423.67)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(652.65 423.67)"><tspan x="0" y="0">x</tspan></text>
+    <text class="h" transform="translate(695.61 446.55)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(716.14 423.67)"><tspan x="0" y="0">)</tspan></text>
+    <text class="e" transform="translate(834.83 399.85)"><tspan x="0" y="0">∑</tspan></text>
+    <text class="h" transform="translate(819.72 472.75)"><tspan x="0" y="0">x</tspan></text>
+    <text class="m" transform="translate(849.91 491.21)"><tspan x="0" y="0">0</tspan></text>
+    <text class="j" transform="translate(876.12 472.75)"><tspan x="0" y="0">∈</tspan></text>
+    <text class="h" transform="translate(926.7 472.75)"><tspan x="0" y="0">S</tspan></text>
+    <text class="i" transform="translate(961.03 491.21)"><tspan x="0" y="0">k</tspan></text>
+    <text class="f" transform="translate(1012.04 268.3)"><tspan x="0" y="0">u</tspan></text>
+    <text class="h" transform="translate(1060.39 294.3)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(1080.91 268.3)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(1115.55 268.3)"><tspan x="0" y="0">x</tspan></text>
+    <text class="h" transform="translate(1158.07 294.3)"><tspan x="0" y="0">t</tspan></text>
+    <text class="d" transform="translate(1190.15 268.04)"><tspan x="0" y="0">|</tspan></text>
+    <text class="f" transform="translate(1234.99 268.3)"><tspan x="0" y="0">x</tspan></text>
+    <text class="j" transform="translate(1277.51 294.3)"><tspan x="0" y="0">0</tspan></text>
+    <text class="g" transform="translate(1314.43 268.3)"><tspan x="0" y="0">)</tspan></text>
+    <text class="f" transform="translate(1349.06 268.3)"><tspan x="0" y="0">p</tspan></text>
+    <text class="h" transform="translate(1397.82 294.3)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(1418.35 268.3)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(1452.98 268.3)"><tspan x="0" y="0">x</tspan></text>
+    <text class="h" transform="translate(1495.5 294.3)"><tspan x="0" y="0">t</tspan></text>
+    <text class="d" transform="translate(1527.59 268.04)"><tspan x="0" y="0">|</tspan></text>
+    <text class="f" transform="translate(1572.42 268.3)"><tspan x="0" y="0">x</tspan></text>
+    <text class="j" transform="translate(1614.94 294.3)"><tspan x="0" y="0">0</tspan></text>
+    <text class="g" transform="translate(1651.86 268.3)"><tspan x="0" y="0">)</tspan></text>
+    <text class="f" transform="translate(1686.5 268.3)"><tspan x="0" y="0">q</tspan></text>
+    <text class="g" transform="translate(1738.5 268.3)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(1773.13 268.3)"><tspan x="0" y="0">x</tspan></text>
+    <text class="j" transform="translate(1815.65 294.3)"><tspan x="0" y="0">0</tspan></text>
+    <text class="g" transform="translate(1852.57 268.3)"><tspan x="0" y="0">)</tspan></text>
+    <rect x="1001.64" y="315.92" width="895.96" height="6.86"/>
+    <text class="f" transform="translate(1310.19 423.67)"><tspan x="0" y="0">p</tspan></text>
+    <text class="h" transform="translate(1359.39 446.55)"><tspan x="0" y="0">t</tspan></text>
+    <text class="j" transform="translate(1379.92 446.55)"><tspan x="0" y="0">,</tspan></text>
+    <text class="h" transform="translate(1398.38 446.55)"><tspan x="0" y="0">S</tspan></text>
+    <text class="i" transform="translate(1433.02 462.79)"><tspan x="0" y="0">k</tspan></text>
+    <text class="g" transform="translate(1456.3 423.67)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(1490.93 423.67)"><tspan x="0" y="0">x</tspan></text>
+    <text class="h" transform="translate(1533.89 446.55)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(1554.42 423.67)"><tspan x="0" y="0">)</tspan></text>
+    <text class="k" transform="translate(1197.67 581.6)"><tspan x="0" y="0">Data-Expert Flow</tspan></text>
+    <text class="k" transform="translate(539.98 581.6)"><tspan x="0" y="0">Router</tspan></text>
+  </g>
+</svg>

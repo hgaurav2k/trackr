@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diffusion Models Tutorial</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+<style>
+  body { margin: 0; padding: 0; user-select: none; }
+  #myDiv { width:100%; height:600px; }
+</style>
+</head>
+<body>
+<div id="myDiv"></div>
+<script>
+var myDiv = document.getElementById('myDiv');
+var isUpdating = false; 
+var dragging = false; // track if we are currently dragging x_t
+var dragThreshold = 10; // pixels within which we consider a click to grab the point
+
+// Plotly.d3.csv('https://raw.githubusercontent.com/plotly/datasets/master/normal-clusters.csv', function(err, rows) {
+Plotly.d3.csv('./three_spirals_combined_15_rows_clean.csv', function(err, rows) {
+  if(err) {
+    console.error(err);
+    return;
+  }
+
+  function unpack(rows, key) {
+    return rows.map(function(row) { return parseFloat(row[key]); });
+  }
+
+  // Original data
+  var x0_orig = unpack(rows,'x0'), y0_orig = unpack(rows,'y0');
+
+//   x0_orig = x0_orig.slice(20, 30);
+//   y0_orig = y0_orig.slice(20, 30);
+  
+  // Center the data around (0,0)
+  var meanX = x0_orig.reduce((a,b)=>a+b,0)/x0_orig.length;
+  var meanY = y0_orig.reduce((a,b)=>a+b,0)/y0_orig.length;
+  x0_orig = x0_orig.map(v => v - meanX);
+  y0_orig = y0_orig.map(v => v - meanY);
+
+  // Determine initial bounding box at t=0
+  var minX = Math.min(...x0_orig);
+  var maxX = Math.max(...x0_orig);
+  var minY = Math.min(...y0_orig);
+  var maxY = Math.max(...y0_orig);
+
+  // Add some padding around the points
+  var xRange = maxX - minX;
+  var yRange = maxY - minY;
+  var padFactor = 0.1;
+  var xPad = xRange * padFactor;
+  var yPad = yRange * padFactor;
+
+  var xAxisRange = [minX - xPad, maxX + xPad];
+  var yAxisRange = [minY - yPad, maxY + yPad];
+
+  var originalXRange = [...xAxisRange];  // Store original x bounds
+  var originalYRange = [...yAxisRange];  // Store original y bounds
+
+  // Start with t=0
+  var t = 0.5;
+
+  function sampleFromGaussian(mean, variance) {
+    // Box-Muller transform to generate a standard normal random variable
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    // Scale and shift to get a Gaussian with the specified mean and variance
+    return z0 * Math.sqrt(variance) + mean;
+  }
+
+  function initializeXT() {
+    const meansX = x0_orig.map(val => (1 - t) * val);
+    const meansY = y0_orig.map(val => (1 - t) * val);
+    const variance = t / 4;
+
+    // Sample from the mixture of Gaussians
+    const index = Math.floor(Math.random() * x0_orig.length);
+    x_t = sampleFromGaussian(meansX[index], variance);
+    y_t = sampleFromGaussian(meansY[index], variance);
+
+    x_t = -0.5;
+    y_t = 0.5;
+  }
+
+  // Call the function to initialize x_t
+  initializeXT();
+
+  var inf = 0;
+  var pts = {x0: x0_orig, y0: y0_orig};
+
+  function computePoints(t) {
+    var x0 = x0_orig.map(val => (1 - t)*val);
+    var y0 = y0_orig.map(val => (1 - t)*val);
+    return {x0: x0, y0: y0};
+  }
+
+  function computeXT(t) {
+    
+    xt_orig = x_t
+    var xt_new = x0_orig.map(val => (1 - t)*val);
+    var yt_new = y0_orig.map(val => (1 - t)*val);
+    return {x0: x0, y0: y0};
+  }
+
+  function computeInfluences(x0, y0, x_t, y_t) {
+    // Prevent sigma_t from being too small
+    var sigma_t = Math.max(t, 0.05); 
+    var mu_t_scale = 1 - sigma_t;
+    
+    var len = x0.length;
+    var distances = new Array(len);
+
+    // Compute distances (squared)
+    for (var i = 0; i < len; i++) {
+      var dx = x_t - mu_t_scale * x0_orig[i];
+      var dy = y_t - mu_t_scale * y0_orig[i];
+      distances[i] = dx * dx + dy * dy;
+    }
+
+    // var minDist = Math.min(...distances);
+    // console.log("Minimum distance:", minDist);
+
+    var invDenominator = 1 / (2 * sigma_t * sigma_t);
+    var scaledDistances = new Array(len);
+    var maxVal = -Infinity;
+
+    for (var i = 0; i < len; i++) {
+      var val = -distances[i] * invDenominator;
+      scaledDistances[i] = val;
+      if (val > maxVal) {
+        maxVal = val;
+      }
+    }
+
+    var expVals = new Array(len);
+    var sumExp = 0;
+
+    for (var i = 0; i < len; i++) {
+      var ev = Math.exp(scaledDistances[i] - maxVal);
+      ev = Math.max(ev, 1e-6);
+      expVals[i] = ev;
+      sumExp += ev;
+    }
+
+    var baseline = 1e-5;
+    for (var i = 0; i < len; i++) {
+      expVals[i] += baseline;
+    }
+
+    sumExp = expVals.reduce((a, b) => a + b, 0);
+
+    for (var i = 0; i < len; i++) {
+      expVals[i] /= sumExp;
+    }
+
+    return {influences: expVals, distances: distances};
+  }
+
+  function updateViewBounds() {
+    // Find the bounds of all x_t points
+    const minX_t = Math.min(...x_t_points);
+    const maxX_t = Math.max(...x_t_points);
+    const minY_t = Math.min(...y_t_points);
+    const maxY_t = Math.max(...y_t_points);
+
+    // Also consider original data points
+    const minX = Math.min(minX_t, Math.min(...x0_orig));
+    const maxX = Math.max(maxX_t, Math.max(...x0_orig));
+    const minY = Math.min(minY_t, Math.min(...y0_orig));
+    const maxY = Math.max(maxY_t, Math.max(...y0_orig));
+
+    // Calculate ranges
+    const xRange = maxX - minX;
+    const yRange = maxY - minY;
+    
+    // Add padding (10%)
+    const padFactor = 0.1;
+    const xPad = xRange * padFactor;
+    const yPad = yRange * padFactor;
+
+    // Set target ranges with padding
+    const targetXRange = [minX - xPad, maxX + xPad];
+    const targetYRange = [minY - yPad, maxY + yPad];
+
+    // Smooth transition
+    const transitionSpeed = 0.1;
+    xAxisRange[0] += (targetXRange[0] - xAxisRange[0]) * transitionSpeed;
+    xAxisRange[1] += (targetXRange[1] - xAxisRange[1]) * transitionSpeed;
+    yAxisRange[0] += (targetYRange[0] - yAxisRange[0]) * transitionSpeed;
+    yAxisRange[1] += (targetYRange[1] - yAxisRange[1]) * transitionSpeed;
+  }
+
+  // Add these variables near the top
+  var numPoints = 10;  // Number of x_t points to show
+  var x_t_points = [];
+  var y_t_points = [];
+  var t_points = [];
+  var cycleLength = 6000; // 6 seconds per full cycle (3s noise + 3s denoise)
+  var startTime = Date.now();
+  var phaseOffsets = []; // Random offset for each point
+
+  // Add this constant near the top with other variables
+  const MAX_DISTANCE_FROM_ORIGIN = 1.4; // Adjust this value as needed
+
+  // Add these variables near the top with other state variables
+  const noiseOffsets = Array(numPoints).fill(0).map(() => ({
+    x: Math.random() * 10000,
+    y: Math.random() * 10000,
+    speed: 0.001 + Math.random() * 0.002
+  }));
+
+  function initializeMultiplePoints() {
+    x_t_points = [];
+    y_t_points = [];
+    t_points = [];
+    phaseOffsets = []; // Initialize phase offsets
+    
+    for (let i = 0; i < numPoints; i++) {
+      // Random initial t between 0.1 and 0.7
+      const t_init = 0.1 + Math.random() * 0.6;
+      t_points.push(t_init);
+      
+      // Random phase offset for this point (0 to cycleLength)
+      phaseOffsets.push(Math.random() * cycleLength);
+      
+      // Sample initial position using existing logic
+      const meansX = x0_orig.map(val => (1 - t_init) * val);
+      const meansY = y0_orig.map(val => (1 - t_init) * val);
+      const variance = t_init / 4;
+      
+      const index = Math.floor(Math.random() * x0_orig.length);
+      x_t_points.push(sampleFromGaussian(meansX[index], variance));
+      y_t_points.push(sampleFromGaussian(meansY[index], variance));
+    }
+  }
+
+  // Add this new function to update point positions
+  function updatePoints() {
+    const currentTime = Date.now();
+    
+    for (let i = 0; i < numPoints; i++) {
+      // Update noise offsets
+      noiseOffsets[i].x += noiseOffsets[i].speed;
+      noiseOffsets[i].y += noiseOffsets[i].speed;
+      
+      // Generate smooth noise using sine waves with different frequencies
+      const noise_x = 0.2 * (
+        Math.sin(noiseOffsets[i].x) + 
+        Math.sin(noiseOffsets[i].x * 0.5) * 0.5
+      );
+      const noise_y = 0.2 * (
+        Math.sin(noiseOffsets[i].y) + 
+        Math.sin(noiseOffsets[i].y * 0.5) * 0.5
+      );
+
+      // Calculate phase for this point (0 to 1)
+      const adjustedTime = (currentTime - startTime + phaseOffsets[i]) % cycleLength;
+      const phase = adjustedTime / cycleLength;
+      
+      // Target t value based on phase (0.1 -> 0.7)
+      let targetT;
+      if (phase < 0.5) {
+        targetT = 0.1 + (phase * 2) * 0.6;
+      } else {
+        targetT = 0.7 - ((phase - 0.5) * 2) * 0.6;
+      }
+      
+      // Smoothly update t value
+      const t_smoothing = 0.1;
+      t_points[i] += (targetT - t_points[i]) * t_smoothing;
+      const t = t_points[i];
+
+      // Calculate weighted average for predictions
+      const result = computeInfluences(pts.x0, pts.y0, x_t_points[i], y_t_points[i]);
+      const inf = result.influences;
+      
+      // Calculate scaled x_0 prediction
+      let scaled_x0 = 0, scaled_y0 = 0;
+      for (let j = 0; j < pts.x0.length; j++) {
+        scaled_x0 += x0_orig[j] * inf[j];
+        scaled_y0 += y0_orig[j] * inf[j];
+      }
+      scaled_x0 *= (1 - t);
+      scaled_y0 *= (1 - t);
+
+      const dt = 0.0035;
+      let new_x, new_y;
+
+      if (phase < 0.5) {
+        // Forward diffusion: move away from scaled x_0
+        new_x = x_t_points[i] - (scaled_x0 - x_t_points[i]) * dt + noise_x * dt;
+        new_y = y_t_points[i] - (scaled_y0 - y_t_points[i]) * dt + noise_y * dt;
+      } else {
+        // Reverse diffusion: move towards scaled x_0
+        new_x = x_t_points[i] + (scaled_x0 - x_t_points[i]) * dt + noise_x * dt;
+        new_y = y_t_points[i] + (scaled_y0 - y_t_points[i]) * dt + noise_y * dt;
+      }
+      
+      // Check distance from origin
+      const distance = Math.sqrt(new_x * new_x + new_y * new_y);
+      if (distance > MAX_DISTANCE_FROM_ORIGIN) {
+        const scale = MAX_DISTANCE_FROM_ORIGIN / distance;
+        new_x *= scale;
+        new_y *= scale;
+      }
+      
+      x_t_points[i] = new_x;
+      y_t_points[i] = new_y;
+    }
+  }
+
+  // Replace the updatePlot function with this new version
+  function updatePlot() {
+    if (isUpdating) return;
+    isUpdating = true;
+
+    updateViewBounds();
+
+    // Create arrays to store denoised predictions
+    const x_pred = [];
+    const y_pred = [];
+    const traces = [];
+
+    // First trace: Original points
+    traces.push({
+      x: pts.x0,
+      y: pts.y0,
+      mode: 'markers',
+      marker: {
+        color: '#323088',
+        size: 10
+      }
+    });
+
+    // Create prediction lines for each x_t point
+    const lineShapes = [];
+    for (let i = 0; i < numPoints; i++) {
+      // Calculate weighted average for predictions
+      const result = computeInfluences(pts.x0, pts.y0, x_t_points[i], y_t_points[i]);
+      const inf = result.influences;
+      
+      let wX = 0, wY = 0;
+      for (let j = 0; j < pts.x0.length; j++) {
+        wX += x0_orig[j] * inf[j];
+        wY += y0_orig[j] * inf[j];
+      }
+
+      // Store denoised predictions
+      x_pred.push((1-t_points[i]) * wX);
+      y_pred.push((1-t_points[i]) * wY);
+
+      // Add prediction line
+      lineShapes.push({
+        type: 'line',
+        xref: 'x', yref: 'y',
+        x0: x_t_points[i],
+        y0: y_t_points[i],
+        x1: x_pred[i],
+        y1: y_pred[i],
+        line: {
+          color: `hsla(${15 + (340/numPoints)*i}, 100%, 60%, 0.3)`,
+          width: 2,
+          dash: 'dash'
+        },
+        layer: 'below'
+      });
+    }
+
+    // Add denoised predictions trace
+    traces.push({
+      x: x_pred,
+      y: y_pred,
+      mode: 'markers',
+      marker: {
+        size: 10,
+        color: x_t_points.map((_,i) => `hsla(${15 + (340/numPoints)*i}, 100%, 60%, 0.7)`),
+        symbol: 'circle-open',
+        line: {width: 2}
+      }
+    });
+
+    // Add x_t points trace
+    traces.push({
+      x: x_t_points,
+      y: y_t_points,
+      mode: 'markers',
+      marker: {
+        size: 12,
+        color: x_t_points.map((_,i) => `hsla(${15 + (340/numPoints)*i}, 100%, 60%, 0.7)`),
+        symbol: 'circle'
+      }
+    });
+
+    Plotly.react('myDiv', traces, {
+      showlegend: false,
+      xaxis: {
+        visible: false,
+        range: xAxisRange,
+        autorange: false
+      },
+      yaxis: {
+        visible: false,
+        range: yAxisRange,
+        autorange: false
+      },
+      shapes: lineShapes,
+      margin: {l:0, r:0, t:0, b:0}
+    }).then(function(){
+      isUpdating = false;
+    });
+  }
+
+  // Add layout and config definitions before initialization
+  var layout = {
+    showlegend: false,
+    xaxis: {
+      visible: false,
+      range: xAxisRange,
+      autorange: false
+    },
+    yaxis: {
+      visible: false,
+      range: yAxisRange,
+      autorange: false
+    },
+    margin: {l:0, r:0, t:0, b:0}
+  };
+
+  var config = {
+    displayModeBar: false,
+    responsive: true
+  };
+
+  // Initialize plot with animation
+  initializeMultiplePoints();
+  Plotly.newPlot('myDiv', [], layout, config).then(function() {
+    function animate() {
+      updatePoints();
+      updatePlot();
+      requestAnimationFrame(animate);
+    }
+    animate();
+  });
+
+  // Remove all the event listeners and interactive elements
+  // ... remove rest of existing code ...
+});
+</script>
+</body>
+</html>

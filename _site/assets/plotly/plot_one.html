@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diffusion Models Tutorial</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+<style>
+  body { margin: 0; padding: 0; user-select: none; }
+  #myDiv { width:100%; height:600px; }
+  #denoiseButton {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    background-color: #d44c3f;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  #denoiseButton:hover {
+    background-color: #E64A2E;
+  }
+  #noiseButton {
+    position: absolute;
+    top: 10px;
+    right: 120px;
+    padding: 10px 20px;
+    background-color: #372F80;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  #noiseButton:hover {
+    background-color: #2980B9;
+  }
+</style>
+</head>
+<body>
+<div id="myDiv"></div>
+<button id="noiseButton">Invert</button>
+<button id="denoiseButton">Denoise</button>
+<script>
+var myDiv = document.getElementById('myDiv');
+var isUpdating = false; 
+var dragging = false; // track if we are currently dragging x_t
+var dragThreshold = 10; // pixels within which we consider a click to grab the point
+
+// Plotly.d3.csv('https://raw.githubusercontent.com/plotly/datasets/master/normal-clusters.csv', function(err, rows) {
+Plotly.d3.csv('./three_spirals_combined_15_rows_clean.csv', function(err, rows) {
+  if(err) {
+    console.error(err);
+    return;
+  }
+
+  function unpack(rows, key) {
+    return rows.map(function(row) { return parseFloat(row[key]); });
+  }
+
+  // Original data
+  var x0_orig = unpack(rows,'x0'), y0_orig = unpack(rows,'y0');
+
+//   x0_orig = x0_orig.slice(20, 30);
+//   y0_orig = y0_orig.slice(20, 30);
+  
+  // Center the data around (0,0)
+  var meanX = x0_orig.reduce((a,b)=>a+b,0)/x0_orig.length;
+  var meanY = y0_orig.reduce((a,b)=>a+b,0)/y0_orig.length;
+  x0_orig = x0_orig.map(v => v - meanX);
+  y0_orig = y0_orig.map(v => v - meanY);
+
+  // Determine initial bounding box at t=0
+  var minX = Math.min(...x0_orig);
+  var maxX = Math.max(...x0_orig);
+  var minY = Math.min(...y0_orig);
+  var maxY = Math.max(...y0_orig);
+
+  // Add some padding around the points
+  var xRange = maxX - minX;
+  var yRange = maxY - minY;
+  var padFactor = 0.1;
+  var xPad = xRange * padFactor;
+  var yPad = yRange * padFactor;
+
+  var xAxisRange = [minX - xPad, maxX + xPad];
+  var yAxisRange = [minY - yPad, maxY + yPad];
+
+  var originalXRange = [...xAxisRange];  // Store original x bounds
+  var originalYRange = [...yAxisRange];  // Store original y bounds
+
+  // Start with t=0
+  var t = 0.5;
+
+  function sampleFromGaussian(mean, variance) {
+    // Box-Muller transform to generate a standard normal random variable
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    // Scale and shift to get a Gaussian with the specified mean and variance
+    return z0 * Math.sqrt(variance) + mean;
+  }
+
+  function initializeXT() {
+    const meansX = x0_orig.map(val => (1 - t) * val);
+    const meansY = y0_orig.map(val => (1 - t) * val);
+    const variance = t / 4;
+
+    // Sample from the mixture of Gaussians
+    const index = Math.floor(Math.random() * x0_orig.length);
+    x_t = sampleFromGaussian(meansX[index], variance);
+    y_t = sampleFromGaussian(meansY[index], variance);
+
+    x_t = -0.5;
+    y_t = 0.5;
+  }
+
+  // Call the function to initialize x_t
+  initializeXT();
+
+  var inf = 0;
+  var pts = {x0: x0_orig, y0: y0_orig};
+
+  function computePoints(t) {
+    var x0 = x0_orig.map(val => (1 - t)*val);
+    var y0 = y0_orig.map(val => (1 - t)*val);
+    return {x0: x0, y0: y0};
+  }
+
+  function computeXT(t) {
+    
+    xt_orig = x_t
+    var xt_new = x0_orig.map(val => (1 - t)*val);
+    var yt_new = y0_orig.map(val => (1 - t)*val);
+    return {x0: x0, y0: y0};
+  }
+
+  function computeInfluences(x0, y0, x_t, y_t) {
+    // Prevent sigma_t from being too small
+    var sigma_t = Math.max(t, 0.05); 
+    var mu_t_scale = 1 - sigma_t;
+    
+    var len = x0.length;
+    var distances = new Array(len);
+
+    // Compute distances (squared)
+    for (var i = 0; i < len; i++) {
+      var dx = x_t - mu_t_scale * x0_orig[i];
+      var dy = y_t - mu_t_scale * y0_orig[i];
+      distances[i] = dx * dx + dy * dy;
+    }
+
+    // var minDist = Math.min(...distances);
+    // console.log("Minimum distance:", minDist);
+
+    var invDenominator = 1 / (2 * sigma_t * sigma_t);
+    var scaledDistances = new Array(len);
+    var maxVal = -Infinity;
+
+    for (var i = 0; i < len; i++) {
+      var val = -distances[i] * invDenominator;
+      scaledDistances[i] = val;
+      if (val > maxVal) {
+        maxVal = val;
+      }
+    }
+
+    var expVals = new Array(len);
+    var sumExp = 0;
+
+    for (var i = 0; i < len; i++) {
+      var ev = Math.exp(scaledDistances[i] - maxVal);
+      ev = Math.max(ev, 1e-6);
+      expVals[i] = ev;
+      sumExp += ev;
+    }
+
+    var baseline = 1e-5;
+    for (var i = 0; i < len; i++) {
+      expVals[i] += baseline;
+    }
+
+    sumExp = expVals.reduce((a, b) => a + b, 0);
+
+    for (var i = 0; i < len; i++) {
+      expVals[i] /= sumExp;
+    }
+
+    return {influences: expVals, distances: distances};
+  }
+
+  function updateViewBounds(x_t, y_t) {
+    const padding = 0.1;
+    const currentXRange = xAxisRange[1] - xAxisRange[0];
+    const currentYRange = yAxisRange[1] - yAxisRange[0];
+    const transitionSpeed = 0.1;
+    
+    // Target ranges - start with original ranges as default
+    let targetXRange = [...originalXRange];
+    let targetYRange = [...originalYRange];
+    
+    // Only adjust if x_t is outside the original bounds' safe zone
+    if (x_t < originalXRange[0] + currentXRange * padding || 
+        x_t > originalXRange[1] - currentXRange * padding) {
+        
+        if (x_t < xAxisRange[0] + currentXRange * padding) {
+            targetXRange[0] = x_t - currentXRange * padding;
+            targetXRange[1] = targetXRange[0] + currentXRange;
+        } else if (x_t > xAxisRange[1] - currentXRange * padding) {
+            targetXRange[1] = x_t + currentXRange * padding;
+            targetXRange[0] = targetXRange[1] - currentXRange;
+        }
+    }
+    
+    // Only adjust if y_t is outside the original bounds' safe zone
+    if (y_t < originalYRange[0] + currentYRange * padding || 
+        y_t > originalYRange[1] - currentYRange * padding) {
+        
+        if (y_t < yAxisRange[0] + currentYRange * padding) {
+            targetYRange[0] = y_t - currentYRange * padding;
+            targetYRange[1] = targetYRange[0] + currentYRange;
+        } else if (y_t > yAxisRange[1] - currentYRange * padding) {
+            targetYRange[1] = y_t + currentYRange * padding;
+            targetYRange[0] = targetYRange[1] - currentYRange;
+        }
+    }
+    
+    // Smooth transition using linear interpolation
+    xAxisRange[0] += (targetXRange[0] - xAxisRange[0]) * transitionSpeed;
+    xAxisRange[1] += (targetXRange[1] - xAxisRange[1]) * transitionSpeed;
+    yAxisRange[0] += (targetYRange[0] - yAxisRange[0]) * transitionSpeed;
+    yAxisRange[1] += (targetYRange[1] - yAxisRange[1]) * transitionSpeed;
+  }
+
+  function updatePlot(t, x_t, y_t) {
+    if (isUpdating) return;
+    isUpdating = true;
+
+    updateViewBounds(x_t, y_t);
+
+    pts = computePoints(t);
+    var result = computeInfluences(pts.x0, pts.y0, x_t, y_t);
+    inf = result.influences;
+    var dists = result.distances;
+
+    // Lines (shapes) from x_t to each point
+    var lineShapes = pts.x0.map(function(px, i) {
+      var py = pts.y0[i];
+      var opacity = inf[i];
+      return {
+        type: 'line',
+        xref: 'x', yref: 'y',
+        x0: x_t, y0: y_t,
+        x1: px, y1: py,
+        line: {
+        //   color: 'rgba(141,190,176,'+opacity+')',
+          color: 'rgba(5, 250, 176,'+(opacity*0.8)+')',
+          width: 4
+        },
+        layer: 'below'
+      };
+    });
+
+    // Calculate the direction of movement for x_t
+    var wX = 0, wY = 0;
+    for (var i = 0; i < pts.x0.length; i++) {
+        wX += x0_orig[i] * inf[i];
+        wY += y0_orig[i] * inf[i];
+    }
+    var eps_x = (x_t + (t-1)*(1-t)*wX) / t;
+    var eps_y = (y_t + (t-1)*(1-t)*wY) / t;
+
+    // Normalize the direction vector to have a constant length
+    var arrowLength = 0.1; // Constant length for the arrow
+    var length = Math.sqrt(eps_x * eps_x + eps_y * eps_y);
+    var dirX = (eps_x / length) * arrowLength;
+    var dirY = (eps_y / length) * arrowLength;
+
+    // Adjust for aspect ratio
+    var aspectRatio = (xAxisRange[1] - xAxisRange[0]) / (yAxisRange[1] - yAxisRange[0]);
+    dirX /= aspectRatio ** 2; // Adjust x component based on aspect ratio
+
+    // Add an arrow shape
+    var arrowShape = {
+      type: 'line',
+      xref: 'x', yref: 'y',
+      x0: x_t, y0: y_t,
+      x1: x_t + dirX, y1: y_t + dirY,
+      line: {
+        color: '#FF5733', // Same color as x_t
+        width: 4
+      },
+      arrowhead: 2, // Correctly specify the arrowhead
+      axref: 'x', ayref: 'y', // Ensure arrowhead is positioned correctly
+      ax: x_t, ay: y_t
+    };
+
+    // Add the arrow shape to the lineShapes arrays
+    // lineShapes.push(arrowShape);
+
+    // Calculate weighted average (already exists in your code)
+    var wX = 0, wY = 0;
+    for (var i = 0; i < pts.x0.length; i++) {
+        wX += x0_orig[i] * inf[i];
+        wY += y0_orig[i] * inf[i];
+    }
+
+    // Add prediction line shape
+    var predictionLine = {
+      type: 'line',
+      xref: 'x', yref: 'y',
+      x0: x_t,
+      y0: y_t,
+      x1: (1-t) * wX,
+      y1: (1-t) * wY,
+      line: {
+        color: '#FF5733',
+        width: 2,
+        dash: 'dash'  // Make it dashed to distinguish from other lines
+      },
+      layer: 'below'
+    };
+
+    // Add the prediction line to lineShapes
+    lineShapes.push(predictionLine);
+
+    // Annotations for x_t and prediction point
+    var annotations = [
+      {
+        x: x_t + 0.02,
+        y: y_t + 0.06,
+        xref: 'x', yref: 'y',
+        text: '$x_t$' ,
+        bgcolor: 'white',
+        showarrow: false,
+        font: {size: 30, color: 'black'},
+        align: 'center',
+        mode: 'math'
+      },
+      {
+        x: x_t + 0.125,
+        y: y_t + 0.057,
+        xref: 'x', yref: 'y',
+        text: '(Drag Me!)' ,
+        bgcolor: 'white',
+        showarrow: false,
+        font: {size: 14, color: 'black', weight: 'bold'},
+        align: 'center',
+        // mode: 'math'
+      },
+      {
+        x: wX * (1-t) - 0.03,
+        y: wY * (1-t) + 0.04,
+        xref: 'x', yref: 'y',
+        text: '$\\hat{x}_0$',
+        bgcolor: 'white',
+        showarrow: false,
+        font: {size: 30},
+        align: 'center',
+        mode: 'math'
+      }
+    ];
+
+    // Create text labels for each point showing influence and distance
+    // var textLabels = inf.map(function(influence, i) {
+    //   var dist = Math.sqrt(dists[i]); // Convert from squared distance
+    //   return 'Inf: ' + influence.toFixed(2) + ', Dist: ' + dist.toFixed(2);
+    // });
+
+    Plotly.react('myDiv', [
+      // First trace: lines and points
+      {
+        x: pts.x0,
+        y: pts.y0,
+        mode: 'markers+text',
+        marker: {
+          color: '#323088',
+          size: 10
+        },
+        textposition: 'top right',
+        textfont: {size: 10, color: 'black'}
+      },
+      // Denoised prediction
+      {
+        x: [wX * (1-t)],
+        y: [wY * (1-t)],
+        mode: 'markers',
+        marker: {
+          size: 10,
+          color: '#ff0000',  // Red
+          symbol: 'circle-open',
+          line: {width: 2}
+        }
+      },
+      // Second trace: x_t point (now orange and drawn last)
+      {
+        x: [x_t],
+        y: [y_t],
+        mode: 'markers',
+        marker: {
+          size: 18,
+          color: '#FF5733', // Changed to orange
+          symbol: 'circle'
+        }
+      }
+    ], {
+      showlegend: false,
+      xaxis: {
+        visible: false,
+        range: xAxisRange,
+        autorange: false
+      },
+      yaxis: {
+        visible: false,
+        range: yAxisRange,
+        autorange: false
+      },
+      sliders: myDiv.layout ? myDiv.layout.sliders : undefined,
+      shapes: lineShapes,
+      annotations: annotations,
+      margin: {l:0, r:0, t:0, b:0}
+    }).then(function(){
+      isUpdating = false;
+    });
+  }
+
+  // Initial data: two traces - original points and the x_t point
+  var data = [{
+    x: x0_orig,
+    y: y0_orig,
+    mode: 'markers',
+    marker: {
+      color: '#323088',
+      size: 10
+    }
+  },{
+    x: [x_t],
+    y: [y_t],
+    mode: 'markers',
+    marker: {
+      size: 12,
+      color: '#FF5733', // Changed to orange
+      symbol: 'circle'
+    }
+  }];
+
+  // Slider steps
+  var steps = [];
+  for (var val = 0; val <= 1; val += 0.01) {
+    steps.push({
+      label: val.toFixed(2),
+      method: 'animate',
+      args: [[val.toFixed(2)], {
+        mode: 'immediate',
+        transition: {duration: 0},
+        frame: {duration: 0, redraw: false}
+      }]
+    });
+  }
+
+  var layout = {
+    showlegend: false,
+    dragmode: false,  // Disable all drag interactions
+    hovermode: false,
+    clickmode: 'none',  // Disable click interactions
+    xaxis: {
+      visible: false,
+      range: xAxisRange,
+      autorange: false,
+      fixedrange: true,
+      scaleanchor: 'y'  // Lock aspect ratio
+    },
+    yaxis: {
+      visible: false,
+      range: yAxisRange,
+      autorange: false,
+      fixedrange: true,
+      constrain: 'domain'  // Lock aspect ratio
+    },
+    sliders: [{
+      pad: {t: 50},
+      x: 0.1,
+      len: 0.8,
+      currentvalue: {
+        visible: true,
+        prefix: 't: ',
+        xanchor: 'right',
+        font: {size: 14, color: '#666'}
+      },
+      active: Math.floor(t*100),
+      steps: steps
+    }],
+    margin: {l:0, r:0, t:0, b:0}
+  };
+
+  var config = {
+    editable: false,  // Changed to false
+    scrollZoom: false,
+    displayModeBar: false,  // Hide the entire mode bar
+    dragmode: false,
+    modeBarButtonsToRemove: ['zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d'],
+    doubleClick: false,
+    displaylogo: false,
+    responsive: true,
+    staticPlot: true  // This should prevent all interactions except our custom ones
+  };
+
+  Plotly.newPlot('myDiv', data, layout, config).then(function() {
+    updatePlot(t, x_t, y_t);
+  });
+
+  var frames = [];
+  for (var val = 0; val <= 1; val += 0.01) {
+    frames.push({name: val.toFixed(2), data: [], layout: {}});
+  }
+  Plotly.addFrames('myDiv', frames);
+
+//   myDiv.on('plotly_sliderchange', function(e) {
+//     if(e && e.step && e.step.label) {
+//       t = parseFloat(e.step.label);
+//       updatePlot(t, x_t, y_t);
+//     }
+//   });
+
+  myDiv.on('plotly_sliderchange', function(e) {
+    if(e && e.step && e.step.label) {
+      var t_new = parseFloat(e.step.label);
+      if (t !== 0) {
+        // Compute eps
+        // eps = (x_t + (t-1)*x_0) / t
+
+        var wX = 0, wY = 0;
+        for (var i = 0; i < pts.x0.length; i++) {
+            // wX += pts.x0[i]*inf[i];
+            wX += x0_orig[i]*inf[i];
+            wY += y0_orig[i]*inf[i];
+        }
+        
+        var eps_x = (x_t + (t-1)*(1-t)*wX) / t;
+        var eps_y = (y_t + (t-1)*(1-t)*wY) / t;
+
+        var dt = t_new - t;
+        x_t = x_t + dt*eps_x;
+        y_t = y_t + dt*eps_y;
+      } else {
+        // If t=0 and we move away, we need to define a starting eps direction
+        // As t->0, x_t = x_0. If t_new>0, then:
+        // eps = (x_t + (-1)*x_0)/0 is not well-defined.
+        // Let's assume we do nothing special at t=0 -> t_new and keep x_t = x_0.
+        // If user wants a continuous transition, start slider from a small >0 value.
+      }
+
+      t = t_new;
+      updatePlot(t, x_t, y_t);
+    }
+  });
+
+  // Coordinate conversion helper
+  function pixelToData(px, py) {
+    var fullLayout = myDiv._fullLayout;
+    var xaxis = fullLayout.xaxis;
+    var yaxis = fullLayout.yaxis;
+    var l = fullLayout._size.l;
+    var top = fullLayout._size.t;
+    var w = fullLayout._size.w;
+    var h = fullLayout._size.h;
+
+    var xRange = xaxis.range;
+    var yRange = yaxis.range;
+
+    var dataX = ((px - l) / w) * (xRange[1] - xRange[0]) + xRange[0];
+    var dataY = (1 - (py - top) / h) * (yRange[1] - yRange[0]) + yRange[0];
+    return [dataX, dataY];
+  }
+
+  // Check if click is near the x_t point
+  function isNearPoint(px, py) {
+    var fullLayout = myDiv._fullLayout;
+    var xaxis = fullLayout.xaxis;
+    var yaxis = fullLayout.yaxis;
+    var l = fullLayout._size.l;
+    var top = fullLayout._size.t;
+    var w = fullLayout._size.w;
+    var h = fullLayout._size.h;
+
+    var xRange = xaxis.range;
+    var yRange = yaxis.range;
+
+    var x_frac = (x_t - xRange[0])/(xRange[1]-xRange[0]);
+    var y_frac = 1 - (y_t - yRange[0])/(yRange[1]-yRange[0]);
+
+    var x_pix = l + x_frac*w;
+    var y_pix = top + y_frac*h;
+
+    var dx = px - x_pix;
+    var dy = py - y_pix;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    return dist < dragThreshold;
+  }
+
+  myDiv.addEventListener('mousedown', function(e) {
+    if (isNearPoint(e.offsetX, e.offsetY)) {
+      dragging = true;
+    }
+  });
+
+  document.addEventListener('mouseup', function(e) {
+    dragging = false;
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (dragging) {
+      var rect = myDiv.getBoundingClientRect();
+      var mouseX = e.clientX - rect.left;
+      var mouseY = e.clientY - rect.top;
+
+      var coords = pixelToData(mouseX, mouseY);
+      x_t = coords[0];
+      y_t = coords[1];
+      updatePlot(t, x_t, y_t);
+    }
+  });
+
+  // Add these variables near the top of your script
+  var isDenoising = false;
+  var denoiseStartTime;
+  var denoiseStartT;
+  var denoiseDuration = 2000; // 2 seconds
+
+  // Add this function before the updatePlot function
+  function startDenoising() {
+    if (isDenoising) return;
+    isDenoising = true;
+    denoiseStartTime = Date.now();
+    denoiseStartT = t;
+    requestAnimationFrame(denoiseStep);
+  }
+
+  function denoiseStep() {
+    if (!isDenoising) return;
+    
+    const elapsed = Date.now() - denoiseStartTime;
+    const progress = Math.min(elapsed / denoiseDuration, 1);
+    
+    // Smooth easing function
+    const eased = 1 - Math.pow(1 - progress, 3);
+    
+    // Calculate the new t value
+    const t_new = denoiseStartT * (1 - eased);
+    
+    // Update x_t and y_t using the same logic as the slider
+    if (t !== 0) {
+      var wX = 0, wY = 0;
+      for (var i = 0; i < pts.x0.length; i++) {
+          wX += x0_orig[i] * inf[i];
+          wY += y0_orig[i] * inf[i];
+      }
+      
+      var eps_x = (x_t + (t-1)*(1-t)*wX) / t;
+      var eps_y = (y_t + (t-1)*(1-t)*wY) / t;
+
+      var dt = t_new - t;
+      x_t = x_t + dt*eps_x;
+      y_t = y_t + dt*eps_y;
+    }
+    
+    // Update t
+    t = t_new;
+    
+    // Update the slider position
+    const sliderStep = Math.round(t * 100);
+    myDiv.layout.sliders[0].active = sliderStep;
+    
+    // Update the plot
+    updatePlot(t, x_t, y_t);
+    
+    if (progress < 1) {
+      requestAnimationFrame(denoiseStep);
+    } else {
+      isDenoising = false;
+    }
+  }
+
+  // Add this event listener after the Plotly.newPlot call
+  document.getElementById('denoiseButton').addEventListener('click', startDenoising);
+
+  // Add these variables alongside the existing denoise variables
+  var isNoising = false;
+  var noiseStartTime;
+  var noiseStartT;
+  var noiseDuration = 2000; // 2 seconds
+
+  function startNoising() {
+    if (isNoising) return;
+    isNoising = true;
+    noiseStartTime = Date.now();
+    noiseStartT = t;
+    requestAnimationFrame(noiseStep);
+  }
+
+  function noiseStep() {
+    if (!isNoising) return;
+    
+    const elapsed = Date.now() - noiseStartTime;
+    const progress = Math.min(elapsed / noiseDuration, 1);
+    
+    // Smooth easing function
+    const eased = 1 - Math.pow(1 - progress, 3);
+    
+    // Calculate the new t value (going from current t to 1)
+    const t_new = noiseStartT + (0.99 - noiseStartT) * eased;
+    
+    // Update x_t and y_t using the same logic as the slider
+    if (t !== 0) {
+      var wX = 0, wY = 0;
+      for (var i = 0; i < pts.x0.length; i++) {
+          wX += x0_orig[i] * inf[i];
+          wY += y0_orig[i] * inf[i];
+      }
+      
+      var eps_x = (x_t + (t-1)*(1-t)*wX) / t;
+      var eps_y = (y_t + (t-1)*(1-t)*wY) / t;
+
+      var dt = t_new - t;
+      x_t = x_t + dt*eps_x;
+      y_t = y_t + dt*eps_y;
+    }
+    
+    // Update t
+    t = t_new;
+    
+    // Update the slider position
+    const sliderStep = Math.round(t * 100);
+    myDiv.layout.sliders[0].active = sliderStep;
+    
+    // Update the plot
+    updatePlot(t, x_t, y_t);
+    
+    if (progress < 1) {
+      requestAnimationFrame(noiseStep);
+    } else {
+      isNoising = false;
+    }
+  }
+
+  // Add this event listener alongside the denoiseButton listener
+  document.getElementById('noiseButton').addEventListener('click', startNoising);
+});
+</script>
+</body>
+</html>

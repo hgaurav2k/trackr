@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1D Flow Model Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: white;
+        }
+        /* Modified for canvas overlay */
+        #visualization-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+        #plot-container {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border-radius: 10px;
+            /* box-shadow: 0 2px 10px rgba(0,0,0,0.1); */
+            box-shadow: none;
+        }
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 10px;
+            cursor: grab;
+        }
+        #particle-canvas.dragging {
+            cursor: grabbing;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .animation-button {
+            background-color: #2196F3;
+        }
+        .animation-button:hover {
+            background-color: #0b7dda;
+        }
+        /* Rounded corners for the heatmap */
+        .heatmap-wrapper {
+            width: 100%;
+            height: 350px;
+            overflow: hidden;
+            border-radius: 20px;
+            position: relative;
+            background-color: white;
+            /* box-shadow: 0 2px 10px rgba(0,0,0,0.1); */
+            box-shadow: none;
+        }
+        #plot-container {
+            border-radius: 0;
+            box-shadow: none;
+        }
+        .slider-container {
+            margin: 20px auto;
+            width: 300px;
+            text-align: center;
+        }
+        
+        /* New CSS for side-by-side sliders */
+        .sliders-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 20px auto;
+            flex-wrap: wrap;
+        }
+        
+        .slider-container.side-by-side {
+            margin: 0;
+            width: 280px;
+            text-align: center;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .slider {
+            width: 100%;
+            height: 5px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #18327E;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #18327E;
+            cursor: pointer;
+            border: none;
+        }
+        .slider-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #18327E;
+        }
+        .info-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Mobile-specific CSS */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            #visualization-container {
+                height: 200px; /* Optimized mobile height */
+            }
+            
+            .heatmap-wrapper {
+                height: 200px; /* Match container height */
+                margin-bottom: 15px; /* Reduce spacing */
+            }
+            
+            .sliders-wrapper {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px; /* Tighter spacing */
+                margin: 15px auto; /* Less margin */
+            }
+            
+            .slider-container.side-by-side {
+                width: 280px; /* Smaller width */
+            }
+            
+            .info-text {
+                font-size: 11px;
+                padding: 0 5px;
+                margin-top: 8px; /* Less margin */
+            }
+            
+            /* Touch-friendly sliders */
+            .slider {
+                height: 8px;
+            }
+            
+            .slider::-webkit-slider-thumb {
+                width: 25px;
+                height: 25px;
+            }
+            
+            .slider::-moz-range-thumb {
+                width: 25px;
+                height: 25px;
+            }
+        }
+        
+        /* Desktop optimization */
+        @media (min-width: 769px) {
+            #visualization-container {
+                height: 380px; /* Taller on desktop to fill space */
+            }
+            
+            .heatmap-wrapper {
+                height: 380px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="heatmap-wrapper">
+        <div id="visualization-container">
+            <div id="plot-container"></div>
+            <canvas id="particle-canvas"></canvas>
+        </div>
+    </div>
+    <!-- <div class="controls">
+        <button onclick="changeDataDistribution('bimodal')">Bimodal Data</button>
+        <button onclick="changeDataDistribution('trimodal')">Trimodal Data</button>
+        <button class="animation-button" onclick="addMoreParticles(20)">More Particles</button>
+    </div> -->
+    <div class="sliders-wrapper">
+        <div class="slider-container side-by-side">
+            <label for="stochasticitySlider">
+                Stochasticity: <span class="slider-value" id="stochasticityValue">0.0</span>
+            </label>
+            <input type="range" id="stochasticitySlider" class="slider" min="0" max="1.0" step="0.04" value="0.0">
+        </div>
+        <div class="slider-container side-by-side">
+            <label for="particleRateSlider">
+                Particle Count: <span class="slider-value" id="particleRateValue">0.2</span>
+            </label>
+            <input type="range" id="particleRateSlider" class="slider" min="0" max="1.0" step="0.05" value="0.2">
+        </div>
+    </div>
+    <div class="info-text">
+        Drag the control points on the right to adjust the data mixture (position and weighting of components). Control stochasticity and particle rate with the sliders above.
+    </div>
+
+    <script>
+        // Mobile detection
+        const isMobile = window.innerWidth <= 768;
+        
+        // Parameters
+        const xMin = -1.7;
+        const xMax = 1.7;
+        const nPoints = 300;
+        const nTimeSteps = 200;
+        
+        // Current data distribution type
+        let currentDataType = 'bimodal';
+        
+        // Stochasticity scale factor
+        let stochasticityScale = 0.0;
+        
+        // Particle addition rate (0 = no particles, 1 = particles every frame)
+        let particleRate = 0.2;
+        
+        // Animation speed multiplier - configurable in code only
+        const animationSpeed = 0.2; // Change this value to adjust animation speed (0.5-5.0 recommended)
+        
+        // Show particle traces - set to false for better performance with many particles
+        const showParticleTraces = true; // Set to false to disable trajectory lines
+        
+        // Canvas setup
+        let canvas = null;
+        let ctx = null;
+        let canvasWidth = 0;
+        let canvasHeight = 0;
+        
+        // Coordinate mapping cache
+        let coordinateMapping = null;
+        let dataDistCoordinateMapping = null; // Separate mapping for data distribution plot
+        
+        // Customizable data modes - these will be modified by dragging
+        let customDataModes = {
+            bimodal: [
+                {mean: -0.7, std: 0.3, weight: 0.6},
+                {mean: 0.7, std: 0.3, weight: 0.4}
+            ],
+            trimodal: [
+                {mean: -1, std: 0.3, weight: 0.33},
+                {mean: 0, std: 0.3, weight: 0.34},
+                {mean: 1, std: 0.3, weight: 0.33}
+            ]
+        };
+        
+        // Dragging state
+        let isDragging = false;
+        let draggedModeIndex = -1;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragStartWeight = 0;
+        let dragStartMean = 0;
+        
+        // Control point rendering parameters
+        const controlPointRadius = isMobile ? 12 : 8; // Larger on mobile for touch
+        const controlPointHoverRadius = isMobile ? 16 : 10;
+        let hoveredModeIndex = -1;
+        
+        // Particle system
+        class Particle {
+            constructor() {
+                this.x = sampleStandardNormal() * 0.6;
+                // Clamp x to min and max
+                this.x = Math.max(xMin + 0.1, Math.min(xMax - 0.1, this.x));
+                this.t = 0;
+                this.trajectory = showParticleTraces ? [{t: 0, x: this.x}] : [];
+                const colorPairs = [
+                    ['#C3D898', '#F45B69'],
+                    ['#F5B0CB', '#791E94'],
+                    ['#FCFAFA', '#f7c814'],
+                    ['#FCFAFA', '#a5f0ea'],
+                ]
+                const colorPair = colorPairs[Math.floor(Math.random() * colorPairs.length)];
+                this.color = colorPair[0];
+                this.radiusColor = colorPair[1];
+                this.id = Math.random();
+                this.fading = false;
+                this.opacity = 1.0;
+                this.fadeDuration = 0.5; // Time in seconds to fade out
+            }
+            
+            update(dt, dataType) {
+                if (this.fading) {
+                    // Particle is fading out
+                    this.opacity -= dt / this.fadeDuration;
+                    return this.opacity > 0; // Remove when fully faded
+                }
+                
+                if (this.t >= 1) {
+                    // Particle reached end, start fading
+                    this.fading = true;
+                    this.opacity = 1.0;
+                    return true; // Keep particle for fading
+                }
+                
+                const actualDt = Math.min(dt, 1 - this.t);
+                const {drift, diffusion} = computeFlowVelocity(this.x, this.t, dataType, actualDt);
+                
+                const noise = sampleStandardNormal();
+                this.x += drift * actualDt + diffusion * noise;
+                this.t += actualDt;
+                
+                // Only store trajectory points if traces are enabled and at intervals to reduce memory
+                if (showParticleTraces && 
+                    (this.trajectory.length === 0 || 
+                     this.t - this.trajectory[this.trajectory.length - 1].t > 0.02)) {
+                    this.trajectory.push({t: this.t, x: this.x});
+                }
+                
+                return true; // Keep particle alive
+            }
+            
+            // Helper method to get color with current opacity
+            getColorWithOpacity() {
+                // Extract HSL values from the color string
+                const hslMatch = this.color.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+                if (hslMatch) {
+                    const [, h, s, l] = hslMatch;
+                    return `hsla(${h}, ${s}%, ${l}%, ${Math.max(0, this.opacity)})`;
+                }
+                // Fallback if color format is different
+                return this.color;
+            }
+        }
+        
+        let particles = [];
+        let animationId = null;
+        let lastTimestamp = null;
+        
+        // Create x grid
+        const xGrid = [];
+        for (let i = 0; i < nPoints; i++) {
+            xGrid.push(xMin + (xMax - xMin) * i / (nPoints - 1));
+        }
+        
+        // Create extended x grid for side traces (to avoid clipping)
+        const xMinExtended = -1.7;
+        const xMaxExtended = 1.7;
+        const nPointsExtended = 500;
+        const xGridExtended = [];
+        for (let i = 0; i < nPointsExtended; i++) {
+            xGridExtended.push(xMinExtended + (xMaxExtended - xMinExtended) * i / (nPointsExtended - 1));
+        }
+        
+        // Create time grid
+        const tGrid = [];
+        for (let i = 0; i < nTimeSteps; i++) {
+            tGrid.push(i / (nTimeSteps - 1));
+        }
+        
+        // Gaussian PDF
+        function gaussianPDF(x, mean, std) {
+            const variance = std * std;
+            return Math.exp(-0.5 * Math.pow((x - mean), 2) / variance) / Math.sqrt(2 * Math.PI * variance);
+        }
+        
+        // Sample from standard normal distribution
+        function sampleStandardNormal() {
+            const u1 = Math.random();
+            const u2 = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        }
+        
+        // Prior distribution (standard Gaussian)
+        function priorPDF(x) {
+            return gaussianPDF(x, 0, 0.6);
+        }
+        
+        // Get modes (peaks) of the data distribution
+        function getDataModes(type) {
+            return customDataModes[type];
+        }
+        
+        // Data distribution (mixture of Gaussians) - now uses customizable modes
+        function dataPDF(x, type) {
+            const modes = getDataModes(type);
+            let pdf = 0;
+            for (let mode of modes) {
+                pdf += mode.weight * gaussianPDF(x, mode.mean, mode.std);
+            }
+            return pdf;
+        }
+        
+        // Compute the marginal distribution at time t for flow matching
+        function flowPDF(x, t, type) {
+            const modes = getDataModes(type);
+            const priorStd = 0.6;
+            
+            // At time t, x_t = t*x_1 + (1-t)*x_0
+            // where x_0 ~ N(0, σ_prior²) and x_1 ~ mixture of Gaussians
+            
+            // The marginal distribution is a mixture of Gaussians where each component
+            // has mean t*μ_i and variance t²*σ_i² + (1-t)²*σ_prior²
+            
+            let pdf = 0;
+            for (let mode of modes) {
+                const meanAtT = t * mode.mean;
+                const varAtT = t * t * mode.std * mode.std + (1 - t) * (1 - t) * priorStd * priorStd;
+                const stdAtT = Math.sqrt(varAtT);
+                
+                pdf += mode.weight * gaussianPDF(x, meanAtT, stdAtT);
+            }
+            
+            return pdf;
+        }
+        
+        // Compute posterior probabilities and means for each Gaussian component given x_t
+        function computePosteriorWeights(x, t, type) {
+            if (t <= 0) return {weights: [], posteriorMeans: [], modes: []};
+            if (t >= 0.999) return {weights: [], posteriorMeans: [], modes: []}; // Avoid numerical issues
+            
+            const modes = getDataModes(type);
+            const priorMean = 0;
+            const priorStd = 0.6;
+            
+            // For flow matching, we have x_t = t*x_1 + (1-t)*x_0
+            // where x_0 ~ prior distribution, x_1 ~ data distribution
+            // Given x_t, we compute the posterior for x_1 from each mode
+            
+            const weights = [];
+            const posteriorMeans = [];
+            let totalWeight = 0;
+            
+            // Noise variance from the prior at time t
+            const noiseVar = (1 - t) * (1 - t) * priorStd * priorStd;
+            
+            // Compute posterior for each mode
+            for (let mode of modes) {
+                // Prior: x_1 ~ N(μ_i, σ_i²)
+                // Observation model: x_t = t*x_1 + noise, where noise ~ N(0, noiseVar)
+                // This gives us x_t | x_1 ~ N(t*x_1, noiseVar)
+                
+                // Using Bayes rule for Gaussians:
+                // Posterior precision: 1/σ_post² = 1/σ_i² + t²/noiseVar
+                const priorVar = mode.std * mode.std;
+                const posteriorPrecision = 1/priorVar + (t * t)/noiseVar;
+                const posteriorVar = 1/posteriorPrecision;
+                
+                // Posterior mean: μ_post = σ_post² * (μ_i/σ_i² + t*x_t/noiseVar)
+                const posteriorMean = posteriorVar * (mode.mean/priorVar + (t * x)/noiseVar);
+                
+                // The marginal likelihood P(x_t | mode i) is the normalizer from Bayes rule
+                // x_t | mode i ~ N(t*μ_i, t²*σ_i² + noiseVar)
+                const marginalMean = t * mode.mean;
+                const marginalVar = t * t * priorVar + noiseVar;
+                const marginalStd = Math.sqrt(marginalVar);
+                
+                const likelihood = mode.weight * gaussianPDF(x, marginalMean, marginalStd);
+                
+                weights.push(likelihood);
+                posteriorMeans.push(posteriorMean);
+                totalWeight += likelihood;
+            }
+            
+            // Normalize weights
+            if (totalWeight > 0) {
+                for (let i = 0; i < weights.length; i++) {
+                    weights[i] /= totalWeight;
+                }
+            }
+            
+            return {weights: weights, posteriorMeans: posteriorMeans, modes: modes};
+        }
+        
+        // Compute the flow velocity analytically using proper flow matching formula
+        function computeFlowVelocity(x, t, type, dt) {
+            if (t <= 0) return {drift: 0, diffusion: 0};
+            if (t >= 0.999) return {drift: 0, diffusion: 0}; // Avoid numerical issues near t=1
+            
+            // Get posterior weights and means for each mode
+            const {weights, posteriorMeans, modes} = computePosteriorWeights(x, t, type);
+            
+            // Compute weighted posterior mean E[x_1 | x_t = x]
+            let posteriorMean = 0;
+            for (let i = 0; i < modes.length; i++) {
+                posteriorMean += weights[i] * posteriorMeans[i];
+            }
+            
+            // The velocity field for flow matching is:
+            // v(x,t) = (posteriorMean - x) / (1 - t)
+            // This moves particles from prior (t=0) to data (t=1)
+            const drift = (posteriorMean - x) / (1 - t);
+            
+            // Diffusion coefficient - decreases with time
+            // At t=0: maximum diffusion for exploration
+            // At t=1: zero diffusion for convergence to target
+            // The sqrt(dt) factor is for the Euler-Maruyama discretization
+            const diffusionCoef = 0.5 * stochasticityScale * Math.sqrt(2 * (1 - t) * dt);
+            
+            return {drift: drift, diffusion: diffusionCoef};
+        }
+        
+        // Create density matrix for heatmap
+        function createDensityMatrix(type) {
+            const z = [];
+            for (let i = 0; i < nPoints; i++) {
+                const row = [];
+                const x = xGrid[i];
+                for (let j = 0; j < nTimeSteps; j++) {
+                    const t = tGrid[j];
+                    row.push(flowPDF(x, t, type));
+                }
+                z.push(row);
+            }
+            return z;
+        }
+        
+        // Initialize canvas
+        function initCanvas() {
+            canvas = document.getElementById('particle-canvas');
+            ctx = canvas.getContext('2d');
+            updateCanvasSize();
+            
+            // Add mouse event listeners for dragging
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseleave', handleMouseUp);
+            
+            // Add touch event listeners for mobile
+            if (isMobile) {
+                canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+                canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+                canvas.addEventListener('touchend', handleTouchEnd, {passive: false});
+            }
+        }
+        
+        // Touch event handlers for mobile
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = touch.clientX - rect.left;
+            const mouseY = touch.clientY - rect.top;
+            
+            const modeIndex = getControlPointAtPosition(mouseX, mouseY);
+            if (modeIndex >= 0) {
+                isDragging = true;
+                draggedModeIndex = modeIndex;
+                dragStartX = mouseX;
+                dragStartY = mouseY;
+                dragStartWeight = customDataModes[currentDataType][modeIndex].weight;
+                dragStartMean = customDataModes[currentDataType][modeIndex].mean;
+                canvas.classList.add('dragging');
+            }
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (isDragging && e.touches.length > 0) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = touch.clientX - rect.left;
+                const mouseY = touch.clientY - rect.top;
+                
+                updateDraggedMode(mouseX, mouseY);
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            if (isDragging) {
+                completeDrag();
+            }
+        }
+        
+        // Update canvas size to match plot with high-DPI support
+        function updateCanvasSize() {
+            const plotDiv = document.getElementById('plot-container');
+            if (!plotDiv || !plotDiv._fullLayout) return;
+            
+            const rect = plotDiv.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1; // Get device pixel ratio
+            
+            // Set actual canvas size in memory (scaled for high-DPI)
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            // Scale the canvas back down using CSS
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            
+            // Scale the drawing context so everything draws at the correct size
+            ctx.scale(dpr, dpr);
+            
+            // Store logical dimensions for coordinate mapping
+            canvasWidth = rect.width;
+            canvasHeight = rect.height;
+            
+            // Update coordinate mapping
+            updateCoordinateMapping();
+        }
+        
+        // Update coordinate mapping from data space to pixel space
+        function updateCoordinateMapping() {
+            const plotDiv = document.getElementById('plot-container');
+            if (!plotDiv || !plotDiv._fullLayout) {
+                coordinateMapping = null;
+                dataDistCoordinateMapping = null;
+                return;
+            }
+            
+            const layout = plotDiv._fullLayout;
+            const xaxis = layout.xaxis;
+            const yaxis = layout.yaxis;
+            
+            // Main plot coordinate mapping
+            coordinateMapping = {
+                xMin: xaxis.range[0],
+                xMax: xaxis.range[1],
+                yMin: yaxis.range[0],
+                yMax: yaxis.range[1],
+                plotLeft: xaxis._offset,
+                plotTop: yaxis._offset,
+                plotWidth: xaxis._length,
+                plotHeight: yaxis._length
+            };
+            
+            // Data distribution plot coordinate mapping
+            const xaxis3 = layout.xaxis3;
+            const yaxis3 = layout.yaxis3;
+            if (xaxis3 && yaxis3) {
+                dataDistCoordinateMapping = {
+                    xMin: xaxis3.range[0],
+                    xMax: xaxis3.range[1],
+                    yMin: yaxis3.range[0],
+                    yMax: yaxis3.range[1],
+                    plotLeft: xaxis3._offset,
+                    plotTop: yaxis3._offset,
+                    plotWidth: xaxis3._length,
+                    plotHeight: yaxis3._length
+                };
+            }
+        }
+        
+        // Convert data coordinates to pixel coordinates
+        function dataToPixel(t, x) {
+            if (!coordinateMapping) return {x: 0, y: 0};
+            
+            // Map t (time) to x-axis pixels
+            const pixelX = coordinateMapping.plotLeft + 
+                          (t - coordinateMapping.xMin) / (coordinateMapping.xMax - coordinateMapping.xMin) * 
+                          coordinateMapping.plotWidth;
+            
+            // Map x (position) to y-axis pixels
+            // Note: y-axis is inverted in pixel coordinates
+            const pixelY = coordinateMapping.plotTop + coordinateMapping.plotHeight -
+                          ((x - coordinateMapping.yMin) / (coordinateMapping.yMax - coordinateMapping.yMin) * 
+                          coordinateMapping.plotHeight);
+            
+            return {x: pixelX, y: pixelY};
+        }
+        
+        // Convert data distribution coordinates to pixel coordinates
+        function dataDistToPixel(xDist, yDist) {
+            if (!dataDistCoordinateMapping) return {x: 0, y: 0};
+            
+            const pixelX = dataDistCoordinateMapping.plotLeft + 
+                          (xDist - dataDistCoordinateMapping.xMin) / 
+                          (dataDistCoordinateMapping.xMax - dataDistCoordinateMapping.xMin) * 
+                          dataDistCoordinateMapping.plotWidth;
+            
+            const pixelY = dataDistCoordinateMapping.plotTop + dataDistCoordinateMapping.plotHeight -
+                          ((yDist - dataDistCoordinateMapping.yMin) / 
+                          (dataDistCoordinateMapping.yMax - dataDistCoordinateMapping.yMin) * 
+                          dataDistCoordinateMapping.plotHeight);
+            
+            return {x: pixelX, y: pixelY};
+        }
+        
+        // Convert pixel coordinates to data coordinates
+        function pixelToData(pixelX, pixelY) {
+            if (!coordinateMapping) return {t: 0, x: 0};
+            
+            // Map pixel x to time
+            const t = (pixelX - coordinateMapping.plotLeft) / coordinateMapping.plotWidth * 
+                     (coordinateMapping.xMax - coordinateMapping.xMin) + coordinateMapping.xMin;
+            
+            // Map pixel y to data x (inverted)
+            const x = (1 - (pixelY - coordinateMapping.plotTop) / coordinateMapping.plotHeight) * 
+                     (coordinateMapping.yMax - coordinateMapping.yMin) + coordinateMapping.yMin;
+            
+            return {t: t, x: x};
+        }
+        
+        // Get control point position for a mode
+        function getControlPointPosition(mode) {
+            // Calculate the position on the data distribution curve
+            // We need to find where the peak of this Gaussian appears on the right plot
+            const scale = 0.15; // This matches the scale factor used in plotting
+            const dataMax = Math.max(...xGridExtended.map(x => dataPDF(x, currentDataType)));
+            
+            // The x position on the data plot is at the peak of the Gaussian
+            const peakHeight = mode.weight * gaussianPDF(mode.mean, mode.mean, mode.std);
+            const xPos = 1 + scale * peakHeight / dataMax;
+            
+            // Use the data distribution coordinate mapping
+            return dataDistToPixel(xPos, mode.mean);
+        }
+        
+        // Check if mouse is over a control point
+        function getControlPointAtPosition(mouseX, mouseY) {
+            const modes = getDataModes(currentDataType);
+            for (let i = 0; i < modes.length; i++) {
+                const pos = getControlPointPosition(modes[i]);
+                if (!pos) continue;
+                const dist = Math.sqrt(Math.pow(mouseX - pos.x, 2) + Math.pow(mouseY - pos.y, 2));
+                if (dist <= controlPointHoverRadius) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        
+        // Update dragged mode (shared between mouse and touch)
+        function updateDraggedMode(mouseX, mouseY) {
+            if (!isDragging || draggedModeIndex < 0) return;
+            
+            const modes = customDataModes[currentDataType];
+            
+            // Update mean based on vertical movement
+            const deltaY = mouseY - dragStartY;
+            const meanChange = -deltaY * 0.005; // Scale factor for mean changes
+            modes[draggedModeIndex].mean = Math.max(xMin + 0.2, Math.min(xMax - 0.2, dragStartMean + meanChange));
+            
+            // Update weight based on horizontal movement
+            const deltaX = mouseX - dragStartX;
+            const weightChange = deltaX * 0.005; // Scale factor for weight changes
+            
+            let newWeight = Math.max(0.05, dragStartWeight + weightChange);
+            modes[draggedModeIndex].weight = newWeight;
+            
+            // Calculate total weight
+            const totalWeight = modes.reduce((sum, mode) => sum + mode.weight, 0);
+            
+            // Only normalize if total weight is significantly different from 1.0
+            if (Math.abs(totalWeight - 1.0) > 0.01) {
+                modes.forEach(mode => mode.weight /= totalWeight);
+            }
+            
+            // Update the plot
+            plotFlow();
+        }
+        
+        // Complete drag operation (shared between mouse and touch)
+        function completeDrag() {
+            if (!isDragging) return;
+            
+            // Final normalization to ensure weights sum to exactly 1.0
+            const modes = customDataModes[currentDataType];
+            const totalWeight = modes.reduce((sum, mode) => sum + mode.weight, 0);
+            modes.forEach(mode => mode.weight /= totalWeight);
+            
+            isDragging = false;
+            draggedModeIndex = -1;
+            canvas.classList.remove('dragging');
+            
+            // Update plot one final time with normalized weights
+            plotFlow();
+        }
+        
+        // Mouse event handlers
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const modeIndex = getControlPointAtPosition(mouseX, mouseY);
+            if (modeIndex >= 0) {
+                isDragging = true;
+                draggedModeIndex = modeIndex;
+                dragStartX = mouseX;
+                dragStartY = mouseY;
+                dragStartWeight = customDataModes[currentDataType][modeIndex].weight;
+                dragStartMean = customDataModes[currentDataType][modeIndex].mean;
+                canvas.classList.add('dragging');
+                e.preventDefault();
+            }
+        }
+        
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            if (isDragging && draggedModeIndex >= 0) {
+                updateDraggedMode(mouseX, mouseY);
+            } else {
+                // Check for hover
+                const newHoveredIndex = getControlPointAtPosition(mouseX, mouseY);
+                if (newHoveredIndex !== hoveredModeIndex) {
+                    hoveredModeIndex = newHoveredIndex;
+                    canvas.style.cursor = hoveredModeIndex >= 0 ? 'grab' : 'default';
+                    renderParticles(); // Re-render to show hover effect
+                }
+            }
+        }
+        
+        function handleMouseUp(e) {
+            if (isDragging) {
+                completeDrag();
+            }
+        }
+        
+        // Render control points
+        function renderControlPoints() {
+            if (!ctx || !coordinateMapping) return;
+            
+            const modes = getDataModes(currentDataType);
+            
+            // Find the maximum weight for scaling the weight indicators
+            const maxWeight = Math.max(...modes.map(m => m.weight));
+            const weightScale = isMobile ? 40 : 60; // Shorter weight indicators on mobile
+            
+            // Draw control points
+            modes.forEach((mode, index) => {
+                const pos = getControlPointPosition(mode);
+                if (!pos) return;
+                
+                const radius = (index === hoveredModeIndex || index === draggedModeIndex) ? 
+                              controlPointHoverRadius : controlPointRadius;
+                
+                // Draw shadow
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+
+                // Draw weight indicator (horizontal line from control point)
+                const weightLength = (mode.weight / maxWeight) * weightScale;
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+                ctx.lineTo(pos.x - weightLength, pos.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Draw control point
+                ctx.fillStyle = '#18327E';
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, radius, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+                
+                // Reset shadow
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                
+                // Draw label
+                ctx.fillStyle = '#333';
+                ctx.font = isMobile ? 'bold 10px Arial' : 'bold 12px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${mode.weight.toFixed(1)}`, pos.x + 15, pos.y + 4);
+            });
+        }
+        
+        // Render particles on canvas
+        function renderParticles() {
+            if (!ctx || !coordinateMapping) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Enable antialiasing
+            ctx.imageSmoothingEnabled = true;
+            
+            // Draw particles
+            particles.forEach(particle => {
+                const pos = dataToPixel(particle.t, particle.x);
+                
+                // Draw trajectory if enabled
+                if (showParticleTraces && particle.trajectory.length > 1 && !particle.fading) {
+                    ctx.globalAlpha = particle.opacity * 0.4;
+                    ctx.strokeStyle = particle.color;                    
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    
+                    const firstPoint = dataToPixel(particle.trajectory[0].t, particle.trajectory[0].x);
+                    ctx.moveTo(firstPoint.x, firstPoint.y);
+                    
+                    // Draw smooth curve through trajectory points
+                    for (let i = 1; i < particle.trajectory.length; i++) {
+                        const point = dataToPixel(particle.trajectory[i].t, particle.trajectory[i].x);
+                        ctx.lineTo(point.x, point.y);
+                    }
+                    
+                    ctx.stroke();
+                }
+                
+                // Draw particle
+                ctx.globalAlpha = particle.opacity;
+                
+                // Draw outer circle (border)
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Draw inner circle
+                ctx.fillStyle = particle.radiusColor;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 3, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+            
+            ctx.globalAlpha = 1.0;
+            
+            // Draw control points on top
+            renderControlPoints();
+        }
+        
+        // Plot function
+        function plotFlow() {
+            const densityMatrix = createDensityMatrix(currentDataType);
+            
+            // Create heatmap trace
+            const heatmapTrace = {
+                x: tGrid,
+                y: xGrid,
+                z: densityMatrix,
+                type: 'heatmap',
+                colorscale: "Portland",
+                showscale: false,
+                hoverinfo: 'none',
+            };
+            
+            // Create prior and data distribution traces
+            const priorY = xGridExtended.map(x => priorPDF(x));
+            const dataY = xGridExtended.map(x => dataPDF(x, currentDataType));
+            
+            // Normalize for visualization
+            const priorMax = Math.max(...priorY);
+            const dataMax = Math.max(...dataY);
+            const scale = 0.15; // Scale factor for side distributions
+            
+            const priorTrace = {
+                x: priorY.map(y => -scale * 0.9 * y / priorMax),
+                y: xGridExtended,
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: {
+                    width: 3,
+                    dash: 'dash'
+                },
+                marker: {
+                    color: priorY,
+                    colorscale: 'Portland',
+                    size: 0
+                },
+                fill: 'tozerox',
+                fillcolor: '#18327E',
+                name: 'Prior p_T(x)',
+                xaxis: 'x2',
+                yaxis: 'y2',
+                hoverinfo: 'none'
+            };
+            
+            const dataTrace = {
+                x: dataY.map(y => 1 + scale * y / dataMax),
+                y: xGridExtended,
+                type: 'scatter',
+                mode: 'lines+markers',
+                line: {
+                    width: 3,
+                    dash: 'dash'
+                },
+                marker: {
+                    color: dataY,
+                    colorscale: 'Portland',
+                    size: 0
+                },
+                fill: 'tozerox',
+                fillcolor: '#18327E',
+                name: 'Data p_0(x)',
+                xaxis: 'x3',
+                yaxis: 'y3',
+                hoverinfo: 'none'
+            };
+
+            const data = [heatmapTrace, priorTrace, dataTrace];
+            
+            // Mobile vs Desktop layout - adjust proportions for mobile
+            let layout;
+            
+            if (isMobile) {
+                // Mobile layout - three panel but with tighter proportions
+                layout = {
+                    hovermode: false,
+                    xaxis: {
+                        title: {
+                            text: 'Timestep (t)',
+                            font: {size: 12, weight: 'bold'}
+                        },
+                        domain: [0.25, 0.75], // Narrower main plot on mobile
+                        range: [0, 1],
+                        zeroline: false,
+                    },
+                    yaxis: {
+                        range: [xMin, xMax],
+                        showticklabels: false,
+                        ticks: '',
+                        zeroline: false,
+                    },
+                    xaxis2: {
+                        domain: [0, 0.2], // Slightly wider prior plot
+                        showticklabels: false,
+                        showgrid: false,
+                        zeroline: false,
+                        range: [-scale, 0]
+                    },
+                    yaxis2: {
+                        anchor: 'x2',
+                        showticklabels: false,
+                        zeroline: false,
+                        showgrid: false,
+                        range: [xMinExtended, xMaxExtended]
+                    },
+                    xaxis3: {
+                        domain: [0.8, 1], // Slightly wider data plot
+                        showticklabels: false,
+                        showgrid: false,
+                        zeroline: false,
+                        range: [1, 1 + scale]
+                    },
+                    yaxis3: {
+                        anchor: 'x3',
+                        showticklabels: false,
+                        showgrid: false,
+                        zeroline: false,
+                        range: [xMinExtended, xMaxExtended]
+                    },
+                    annotations: [
+                        {
+                            text: 'Prior',
+                            x: 0.1,
+                            y: 1.05,
+                            xref: 'paper',
+                            yref: 'paper',
+                            showarrow: false,
+                            font: {size: 14, color: '#18327E', weight: 'bold'}
+                        },
+                        {
+                            text: 'Data',
+                            x: 0.9,
+                            y: 1.05,
+                            xref: 'paper',
+                            yref: 'paper',
+                            showarrow: false,
+                            font: {size: 14, color: '#18327E', weight: 'bold'}
+                        }
+                    ],
+                    showlegend: false,
+                    margin: {t: 15, l: 20, r: 20, b: 30},
+                    font: {size: 10},
+                };
+            } else {
+                // Desktop layout - original proportions
+                layout = {
+                    hovermode: false,
+                    xaxis: {
+                        title: {
+                            text: 'Timestep (t)',
+                            font: {weight: 'bold'}
+                        },
+                        domain: [0.2, 0.8],
+                        range: [0, 1],
+                        zeroline: false,
+                    },
+                    yaxis: {
+                        range: [xMin, xMax],
+                        showticklabels: false,
+                        ticks: '',
+                        zeroline: false,
+                    },
+                    xaxis2: {
+                        domain: [0, 0.15],
+                        showticklabels: false,
+                        showgrid: false,
+                        zeroline: false,
+                        range: [-scale, 0]
+                    },
+                    yaxis2: {
+                        anchor: 'x2',
+                        showticklabels: false,
+                        zeroline: false,
+                        showgrid: false,
+                        range: [xMinExtended, xMaxExtended]
+                    },
+                    xaxis3: {
+                        domain: [0.85, 1],
+                        showticklabels: false,
+                        showgrid: false,
+                        zeroline: false,
+                        range: [1, 1 + scale]
+                    },
+                    yaxis3: {
+                        anchor: 'x3',
+                        showticklabels: false,
+                        showgrid: false,
+                        zeroline: false,
+                        range: [xMinExtended, xMaxExtended]
+                    },
+                    annotations: [
+                        {
+                            text: 'Prior',
+                            x: 0.075,
+                            y: 1.05,
+                            xref: 'paper',
+                            yref: 'paper',
+                            showarrow: false,
+                            font: {size: 20, color: '#18327E', weight: 'bold'}
+                        },
+                        {
+                            text: 'Data',
+                            x: 0.925,
+                            y: 1.05,
+                            xref: 'paper',
+                            yref: 'paper',
+                            showarrow: false,
+                            font: {size: 20, color: '#18327E', weight: 'bold'}
+                        }
+                    ],
+                    showlegend: false,
+                    margin: {t: 20, l: 40, r: 40, b: 40},
+                };
+            }
+            
+            const config = {
+                responsive: true,
+                displayModeBar: false,
+                doubleClick: 'reset',
+                showTips: false,
+                scrollZoom: false,
+                staticPlot: false,
+                editable: false
+            };
+            
+            Plotly.newPlot('plot-container', data, layout, config).then(() => {
+                // Add a small delay to ensure Plotly has finished rendering
+                setTimeout(() => {
+                    // Update canvas size after plot is created
+                    updateCanvasSize();
+                    // Render particles
+                    renderParticles();
+                    // Auto-start animation if not already running
+                    if (!animationId && particles.length === 0) {
+                        resetAnimation();
+                    }
+                }, 100);
+            });
+        }
+        
+        // Add window resize handler
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                updateCanvasSize();
+                renderParticles();
+            }, 250);
+        });
+        
+        // Animation functions
+        function animate(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            
+            const deltaTime = (timestamp - lastTimestamp) / 1000; // Convert to seconds
+            lastTimestamp = timestamp;
+            
+            // Update all particles
+            const dt = deltaTime * animationSpeed;
+
+            if (Math.random() < particleRate) {
+                addMoreParticles(1);
+            }
+            
+            // Filter out dead particles while updating alive ones
+            particles = particles.filter(particle => {
+                return particle.update(dt, currentDataType);
+            });
+            
+            // Render particles on canvas
+            renderParticles();
+            
+            // Keep animation running
+            if (animationId) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        function startAnimation() {
+            if (!animationId) {
+                lastTimestamp = null;
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                lastTimestamp = null;
+            }
+        }
+        
+        function resetAnimation() {
+            particles = [new Particle()];
+            renderParticles();
+            // Auto-restart animation if it's not running
+            if (!animationId) {
+                startAnimation();
+            }
+        }
+        
+        function addMoreParticles(numParticles) {
+            // Default to 10 particles
+            if (numParticles === undefined) {
+                numParticles = 10;
+            }
+            for (let i = 0; i < numParticles; i++) {
+                particles.push(new Particle());
+            }
+            renderParticles();
+        }
+        
+        // Change data distribution
+        function changeDataDistribution(type) {
+            currentDataType = type;
+            resetAnimation();
+            plotFlow();
+        }
+        
+        // Slider event listeners
+        document.getElementById('stochasticitySlider').addEventListener('input', function(e) {
+            stochasticityScale = parseFloat(e.target.value);
+            document.getElementById('stochasticityValue').textContent = stochasticityScale.toFixed(1);
+        });
+        
+        document.getElementById('particleRateSlider').addEventListener('input', function(e) {
+            particleRate = parseFloat(e.target.value);
+            document.getElementById('particleRateValue').textContent = particleRate.toFixed(1);
+        });
+        
+        // Initialize canvas and start
+        initCanvas();
+        resetAnimation();
+        plotFlow();
+    </script>
+</body>
+</html>

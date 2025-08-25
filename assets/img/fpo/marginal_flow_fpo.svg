@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="a" data-name="Layer_1" xmlns="http://www.w3.org/2000/svg" width="20.12in" height="4.23in" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1448.61 304.27">
+  <defs>
+    <style>
+      .f {
+        fill: none;
+      }
+
+      .g, .h {
+        font-family: STIXVariants-Regular, STIXVariants;
+      }
+
+      .g, .h, .i, .j, .k, .l, .m, .n, .o {
+        font-size: 83px;
+      }
+
+      .p {
+        fill: #1e327b;
+      }
+
+      .p, .q, .r {
+        font-family: HelveticaNeue-Medium, 'Helvetica Neue';
+        font-size: 48px;
+        font-weight: 500;
+      }
+
+      .q {
+        fill: #c84233;
+      }
+
+      .s {
+        font-size: 45.44px;
+      }
+
+      .s, .h, .j, .t, .l, .u {
+        fill: #27458e;
+      }
+
+      .s, .j, .t, .u, .n {
+        font-family: STIXGeneral-Bold, STIXGeneral;
+        font-weight: 700;
+      }
+
+      .i {
+        font-family: STIXSizeOneSym-Regular, STIXSizeOneSym;
+      }
+
+      .k, .l, .m {
+        font-family: STIXGeneral-Regular, STIXGeneral;
+      }
+
+      .k, .n {
+        fill: #d45842;
+      }
+
+      .t {
+        font-size: 64px;
+      }
+
+      .v {
+        clip-path: url(#e);
+      }
+
+      .w {
+        clip-path: url(#d);
+      }
+
+      .x {
+        clip-path: url(#c);
+      }
+
+      .y {
+        clip-path: url(#b);
+      }
+
+      .z {
+        letter-spacing: -.02em;
+      }
+
+      .u, .aa {
+        font-size: 58.93px;
+      }
+
+      .o, .aa {
+        font-family: STIXGeneral-Italic, STIXGeneral;
+        font-style: italic;
+      }
+    </style>
+    <clipPath id="b">
+      <rect class="f" x="-325.9" y="-367.6" width="1920" height="1080"/>
+    </clipPath>
+    <clipPath id="c">
+      <rect class="f" x="287" y="-16.49" width="694.2" height="86.61"/>
+    </clipPath>
+    <clipPath id="d">
+      <rect class="f" x="696.45" y="13.27" width="48.32" height="48.05"/>
+    </clipPath>
+    <clipPath id="e">
+      <rect class="f" x="828.48" y="10.36" width="32.21" height="31.5"/>
+    </clipPath>
+  </defs>
+  <g class="y">
+    <text class="o" transform="translate(167.66 187.08)"><tspan x="0" y="0">u</tspan></text>
+    <text class="aa" transform="translate(206.24 207.83)"><tspan x="0" y="0">t</tspan></text>
+    <text class="m" transform="translate(222.62 187.08)"><tspan x="0" y="0">(</tspan></text>
+    <text class="o" transform="translate(250.26 187.08)"><tspan x="0" y="0">x</tspan></text>
+    <text class="aa" transform="translate(284.2 207.83)"><tspan x="0" y="0">t</tspan></text>
+    <text class="m" transform="translate(300.58 187.08)"><tspan x="0" y="0">)</tspan></text>
+    <text class="m" transform="translate(351.28 187.08)"><tspan x="0" y="0">=</tspan></text>
+    <text class="i" transform="translate(431.19 230.32)"><tspan x="0" y="0">∑</tspan></text>
+    <text class="aa" transform="translate(471.72 288.51)"><tspan x="0" y="0">x</tspan></text>
+    <text class="j" transform="translate(552.26 187.08)"><tspan x="0" y="0">u</tspan></text>
+    <text class="u" transform="translate(598.4 207.83)"><tspan x="0" y="0">t</tspan></text>
+    <text class="l" transform="translate(618.03 187.08)"><tspan x="0" y="0">(</tspan></text>
+    <text class="j" transform="translate(645.67 187.08)"><tspan x="0" y="0">x</tspan></text>
+    <text class="u" transform="translate(687.17 207.83)"><tspan x="0" y="0">t</tspan></text>
+    <text class="h" transform="translate(716.01 186.88)"><tspan x="0" y="0">|</tspan></text>
+    <text class="j" transform="translate(751.79 187.08)"><tspan x="0" y="0">x</tspan></text>
+    <text class="l" transform="translate(793.29 187.08)"><tspan x="0" y="0">)</tspan></text>
+    <text class="o" transform="translate(833.38 125.51)"><tspan x="0" y="0">p</tspan></text>
+    <text class="aa" transform="translate(872.3 146.26)"><tspan x="0" y="0">t</tspan></text>
+    <text class="m" transform="translate(888.68 125.51)"><tspan x="0" y="0">(</tspan></text>
+    <text class="o" transform="translate(916.32 125.51)"><tspan x="0" y="0">x</tspan></text>
+    <text class="aa" transform="translate(950.26 146.26)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(975.86 125.3)"><tspan x="0" y="0">|</tspan></text>
+    <text class="o" transform="translate(1011.64 125.51)"><tspan x="0" y="0">x</tspan></text>
+    <text class="m" transform="translate(1048.5 125.51)"><tspan x="0" y="0">)</tspan></text>
+    <rect x="825.08" y="163.34" width="259.35" height="5.48"/>
+    <text class="o" transform="translate(873.96 249.33)"><tspan x="0" y="0">p</tspan></text>
+    <text class="aa" transform="translate(913.23 267.59)"><tspan x="0" y="0">t</tspan></text>
+    <text class="m" transform="translate(929.61 249.33)"><tspan x="0" y="0">(</tspan></text>
+    <text class="o" transform="translate(957.25 249.33)"><tspan x="0" y="0">x</tspan></text>
+    <text class="aa" transform="translate(991.53 267.59)"><tspan x="0" y="0">t</tspan></text>
+    <text class="m" transform="translate(1007.92 249.33)"><tspan x="0" y="0">)</tspan></text>
+    <text class="n" transform="translate(1088.58 187.08)"><tspan x="0" y="0">q</tspan></text>
+    <text class="k" transform="translate(1134.73 187.08)"><tspan x="0" y="0">(</tspan></text>
+    <text class="n" transform="translate(1162.37 187.08)"><tspan x="0" y="0">x</tspan></text>
+    <text class="k" transform="translate(1203.87 187.08)"><tspan x="0" y="0">)</tspan></text>
+    <text class="q" transform="translate(1091.3 286.14)"><tspan x="0" y="0">Data F</tspan><tspan class="z" x="145.82" y="0">r</tspan><tspan x="161.9" y="0">equency</tspan></text>
+    <text class="r" transform="translate(3.96 286.14)"><tspan x="0" y="0">Marginal Flow</tspan></text>
+  </g>
+  <g class="x">
+    <text class="p" transform="translate(456.7 44)"><tspan x="0" y="0">Path f</tspan><tspan class="z" x="130.7" y="0">r</tspan><tspan x="146.78" y="0" xml:space="preserve">om       to</tspan></text>
+  </g>
+  <g class="w">
+    <text class="t" transform="translate(696.68 43.78)"><tspan x="0" y="0">x</tspan></text>
+    <text class="s" transform="translate(728.68 59.78)"><tspan x="0" y="0">t</tspan></text>
+  </g>
+  <g class="v">
+    <text class="t" transform="translate(828.71 40.87)"><tspan x="0" y="0">x</tspan></text>
+  </g>
+</svg>

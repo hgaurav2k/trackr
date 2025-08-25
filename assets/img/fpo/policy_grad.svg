@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="a" data-name="Layer_1" xmlns="http://www.w3.org/2000/svg" width="24.15in" height="5.64in" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1739 406">
+  <defs>
+    <style>
+      .c, .d, .e, .f, .g, .h {
+        fill: #27458e;
+      }
+
+      .c, .d, .i, .j, .k, .l, .m {
+        font-family: STIXGeneral-Italic, STIXGeneral;
+        font-style: italic;
+      }
+
+      .c, .e, .n, .f, .o, .p, .g, .q, .r, .k {
+        font-size: 83px;
+      }
+
+      .s {
+        fill: none;
+      }
+
+      .t {
+        letter-spacing: 0em;
+      }
+
+      .d, .u, .j, .h, .v, .m {
+        font-size: 58.93px;
+      }
+
+      .w {
+        fill: #1e327b;
+      }
+
+      .w, .x, .y {
+        font-family: HelveticaNeue-Medium, 'Helvetica Neue';
+        font-size: 48px;
+        font-weight: 500;
+      }
+
+      .x {
+        fill: #c84233;
+      }
+
+      .u, .i, .p, .j, .r {
+        fill: #d45842;
+      }
+
+      .u, .f, .h, .r {
+        font-family: STIXGeneral-Bold, STIXGeneral;
+        font-weight: 700;
+      }
+
+      .e {
+        font-family: STIXVariants-Regular, STIXVariants;
+      }
+
+      .n {
+        font-family: STIXSizeOneSym-Regular, STIXSizeOneSym;
+      }
+
+      .i, .l {
+        font-size: 41.84px;
+      }
+
+      .o {
+        font-family: STIXSizeFourSym-Regular, STIXSizeFourSym;
+      }
+
+      .p, .g, .q, .v {
+        font-family: STIXGeneral-Regular, STIXGeneral;
+      }
+
+      .z {
+        clip-path: url(#b);
+      }
+
+      .aa {
+        letter-spacing: -.02em;
+      }
+
+      .ab {
+        letter-spacing: .02em;
+      }
+    </style>
+    <clipPath id="b">
+      <rect class="s" x="-96" y="-342" width="1920" height="1080"/>
+    </clipPath>
+  </defs>
+  <g class="z">
+    <text class="q" transform="translate(37.84 219)"><tspan x="0" y="0">∇</tspan></text>
+    <text class="m" transform="translate(98.52 239.75)"><tspan x="0" y="0">θ</tspan></text>
+    <text class="k" transform="translate(133.74 219)"><tspan x="0" y="0">J</tspan></text>
+    <text class="q" transform="translate(170.59 219)"><tspan x="0" y="0">(</tspan></text>
+    <text class="k" transform="translate(198.23 219)"><tspan x="0" y="0">π</tspan></text>
+    <text class="m" transform="translate(237.14 239.75)"><tspan x="0" y="0">θ</tspan></text>
+    <text class="q" transform="translate(265.43 219)"><tspan x="0" y="0">)</tspan></text>
+    <text class="q" transform="translate(316.13 219)"><tspan x="0" y="0">=</tspan></text>
+    <path d="M401.85,219v-54.94h41.25v3.65h-27.47v21.16h24.81v3.65h-24.81v22.82h27.47v3.65h-41.25ZM411.97,167.71h-6.47v47.64h6.47v-47.64Z"/>
+    <text class="m" transform="translate(447.66 239.75)"><tspan x="0" y="0">π</tspan></text>
+    <text class="l" transform="translate(475.54 252.71)"><tspan x="0" y="0">θ</tspan></text>
+    <text class="v" transform="translate(495.62 239.75)"><tspan x="0" y="0">∼</tspan></text>
+    <text class="v" transform="translate(535.99 239.75)"><tspan x="0" y="0">(</tspan></text>
+    <text class="m" transform="translate(555.61 239.75)"><tspan x="0" y="0">τ</tspan></text>
+    <text class="v" transform="translate(579.78 239.75)"><tspan x="0" y="0">,</tspan></text>
+    <text class="m" transform="translate(594.51 239.75)"><tspan x="0" y="0">T</tspan></text>
+    <text class="v" transform="translate(631.1 239.75)"><tspan x="0" y="0">)</tspan></text>
+    <text class="o" transform="translate(664.59 283.37)"><tspan x="0" y="0">[</tspan></text>
+    <text class="m" transform="translate(765.91 124.42)"><tspan x="0" y="0">T</tspan></text>
+    <text class="n" transform="translate(728.67 262.24)"><tspan x="0" y="0">∑</tspan></text>
+    <text class="m" transform="translate(739.18 320.43)"><tspan x="0" y="0">t</tspan></text>
+    <text class="v" transform="translate(755.57 320.43)"><tspan x="0" y="0">=</tspan></text>
+    <text class="v" transform="translate(795.93 320.43)"><tspan x="0" y="0">0</tspan></text>
+    <text class="g" transform="translate(849.74 219)"><tspan x="0" y="0">∇</tspan></text>
+    <text class="d" transform="translate(910.41 239.75)"><tspan x="0" y="0">θ</tspan></text>
+    <text class="g" transform="translate(943.56 219)"><tspan x="0" y="0">log</tspan></text>
+    <text class="c" transform="translate(1063.49 219)"><tspan x="0" y="0">π</tspan></text>
+    <text class="d" transform="translate(1102.41 239.75)"><tspan x="0" y="0">θ</tspan></text>
+    <text class="g" transform="translate(1130.7 219)"><tspan x="0" y="0">(</tspan></text>
+    <text class="f" transform="translate(1158.34 219)"><tspan x="0" y="0">a</tspan></text>
+    <text class="h" transform="translate(1199.84 239.75)"><tspan x="0" y="0">t</tspan></text>
+    <text class="e" transform="translate(1228.68 218.79)"><tspan x="0" y="0">|</tspan></text>
+    <text class="f" transform="translate(1264.46 219)"><tspan x="0" y="0">s</tspan></text>
+    <text class="h" transform="translate(1296.75 239.75)"><tspan x="0" y="0">t</tspan></text>
+    <text class="g" transform="translate(1316.37 219)"><tspan x="0" y="0">)</tspan></text>
+    <text class="r" transform="translate(1344.01 219)"><tspan x="0" y="0">A</tspan></text>
+    <text class="j" transform="translate(1403.94 188.29)"><tspan x="0" y="0">π</tspan></text>
+    <text class="i" transform="translate(1431.57 203.02)"><tspan x="0" y="0">θ</tspan></text>
+    <text class="p" transform="translate(1451.65 219)"><tspan x="0" y="0">(</tspan></text>
+    <text class="r" transform="translate(1479.29 219)"><tspan x="0" y="0">s</tspan></text>
+    <text class="u" transform="translate(1511.58 239.75)"><tspan x="0" y="0">t</tspan></text>
+    <text class="p" transform="translate(1531.2 219)"><tspan x="0" y="0">,</tspan></text>
+    <text class="r" transform="translate(1565.79 219)"><tspan x="0" y="0">a</tspan></text>
+    <text class="u" transform="translate(1607.29 239.75)"><tspan x="0" y="0">t</tspan></text>
+    <text class="p" transform="translate(1626.91 219)"><tspan x="0" y="0">)</tspan></text>
+    <text class="o" transform="translate(1654.55 283.37)"><tspan x="0" y="0">]</tspan></text>
+    <text class="w" transform="translate(778.67 390.37)"><tspan x="0" y="0">Supervised Lea</tspan><tspan class="ab" x="343.25" y="0">r</tspan><tspan class="t" x="361" y="0">ning Gradient</tspan></text>
+    <text class="x" transform="translate(1257.83 41.4)"><tspan x="0" y="0">Advantage-</tspan><tspan class="aa" x="256.99" y="0">W</tspan><tspan x="301.48" y="0">eighting</tspan></text>
+    <text class="y" transform="translate(1.31 104.84)"><tspan x="0" y="0">Policy Gradient</tspan></text>
+  </g>
+</svg>
